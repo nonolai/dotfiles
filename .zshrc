@@ -41,11 +41,17 @@ zstyle ':completion:*' verbose true
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
+export CLICOLOR=1
 export VISUAL="vim"
 export HOMEBREW_GITHUB_API_TOKEN="39a5f68a10b27f3ca05b4933eb41d4af345d66f0"
 export GOPATH=$HOME/godev
 export PATH=$PATH:$GOPATH/bin
 
+source ~/.common_aliases
+
+if [[ -a ~/.machine_aliases ]]; then
+  source ~/.machine_aliases
+fi
+
 alias dotfiles='git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
-export CLICOLOR=1
