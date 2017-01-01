@@ -41,6 +41,7 @@ zstyle ':completion:*' verbose true
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
+export VISUAL="vim"
 export HOMEBREW_GITHUB_API_TOKEN="39a5f68a10b27f3ca05b4933eb41d4af345d66f0"
 export GOPATH=$HOME/godev
 export PATH=$PATH:$GOPATH/bin
