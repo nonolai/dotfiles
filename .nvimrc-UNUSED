@@ -1,0 +1,117 @@
+syntax on
+set nocompatible
+
+" Vundle stuff
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+" Vundle bootstrapping
+Plugin 'VundleVim/Vundle.vim'
+" Vice theme
+Plugin 'bcicen/vim-vice'
+" VCS diff markers in the gutter
+Plugin 'mhinz/vim-signify'
+" Buffer navigation
+Plugin 'ctrlpvim/ctrlp.vim'
+" Syntax highlighting for GLSL
+Plugin 'tikhomirov/vim-glsl'
+" Syntax highlighting for gdscript
+Plugin 'calviken/vim-gdscript3'
+" Syntax highlighting and other features for Rust
+Plugin 'rust-lang/rust.vim'
+" Syntax highlighting and other features for TypeScript
+Plugin 'leafgarland/typescript-vim'
+" For Google's code formatting
+Plugin 'google/vim-maktaba'
+Plugin 'google/vim-codefmt'
+Plugin 'google/vim-glaive'
+call vundle#end()
+
+" Call Glaive. Google plugins use this for various configs.
+call glaive#Install()
+
+filetype indent plugin on
+set backspace=indent,eol,start
+
+" Molokai Color Scheme Settings
+"colorscheme molokai
+"set background=dark
+"let g:molokai_termcolors = 256
+
+set completeopt=longest,menuone,preview
+
+" Vice Color Scheme Settings
+colorscheme vice
+
+"" Revert always make background transparent
+hi Normal ctermbg=none
+hi NonText ctermbg=none
+hi LineNr ctermbg=none
+
+set mouse=a
+
+"" set colorcolumn=81
+
+autocmd! BufNewFile,BufRead *.vert,*.frag,*.geom set ft=glsl
+autocmd! BufNewFile,BufRead *.gd set ft=gdscript3
+autocmd! BufNewFile,BufRead *.rs set ft=rust
+autocmd! BufNewFile,BufRead *.ts,*.tsx set ft=typescript
+
+set tabstop=2 softtabstop=0 expandtab shiftwidth=2 smarttab cc=81
+autocmd FileType python setlocal tabstop=2 softtabstop=0 expandtab shiftwidth=2 smarttab
+autocmd FileType gdscript3 setlocal tabstop=2 softtabstop=0 expandtab shiftwidth=2 smarttab
+autocmd FileType html setlocal tabstop=2 softtabstop=0 expandtab shiftwidth=2 smarttab cc=101
+autocmd FileType go setlocal tabstop=4 softtabstop=0 noexpandtab shiftwidth=4 smarttab cc=101
+autocmd FileType rust setlocal tabstop=4 softtabstop=0 expandtab shiftwidth=4 smarttab cc=101
+autocmd FileType java setlocal tabstop=2 softtabstop=0 expandtab shiftwidth=2 smarttab cc=101
+autocmd FileType cs setlocal tabstop=2 softtabstop=0 expandtab shiftwidth=2 smarttab cc=101
+
+let g:rustfmt_autosave = 0
+
+set directory=$HOME/.vim/swapfiles/
+
+set number
+set ruler
+
+set nohlsearch
+
+set splitbelow
+set splitright
+
+" Configure vim-signify
+let g:signify_vcs_list = ['hg', 'git']
+let g:signify_vcs_cmds = {
+      \ 'hg': 'hg diff --config extensions.color=! --config defaults.diff= --nodates -U0 --rev .^ -- %f',
+      \ 'git': 'git diff --no-color --no-ext-diff -U0 -- %f',
+      \ }
+highlight SignColumn ctermbg=none
+highlight DiffAdd           cterm=bold ctermbg=none ctermfg=158
+highlight DiffDelete        cterm=bold ctermbg=none ctermfg=218
+highlight DiffChange        cterm=bold ctermbg=none ctermfg=229
+
+" Configure vim-codefmt
+Glaive codefmt google_java_executable="java -jar /Users/cameron/bin/google-java-format-1.6.jar"
+Glaive codefmt prettier_executable="/usr/local/bin/prettier"
+augroup autoformat_settings
+  autocmd FileType bzl AutoFormatBuffer buildifier
+  autocmd FileType c,cpp,proto,javascript AutoFormatBuffer clang-format
+  autocmd FileType dart AutoFormatBuffer dartfmt
+  autocmd FileType go AutoFormatBuffer gofmt
+  autocmd FileType html,css,json AutoFormatBuffer js-beautify
+  autocmd FileType java AutoFormatBuffer google-java-format
+  autocmd FileType python AutoFormatBuffer yapf
+  autocmd FileType javascript,typescript AutoFormatBuffer prettier
+augroup END
+
+let mapleader=","
+nmap <leader>h :set hlsearch!<CR>
+nmap <leader>r :source $MYVIMRC<CR>
+nmap <leader>p :set paste!<CR>:set paste?<CR>
+nmap <leader>\| :vsp %<CR>
+nmap <leader>- :sp %<CR>
+
+set hidden
+"" nmap <leader>b :ls<CR>:b<space>
+nmap <leader>b :CtrlPBuffer<CR>
+nmap <leader>n :bnext<CR>
+nmap <leader>N :bprev<CR>
+nmap <leader>f :FormatCode<CR>
