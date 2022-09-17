@@ -11,12 +11,21 @@ Plug 'preservim/nerdtree'                      -- NERDTree File Browser
 Plug 'neovim/nvim-lspconfig'                   -- Neovim default LSP configs
 Plug 'hrsh7th/nvim-cmp'                        -- Autocomplete
 Plug 'hrsh7th/cmp-nvim-lsp'                    -- Autocomplete/LSP interface
+Plug 'udalov/kotlin-vim'                       -- Kotlin Syntax Highlighting
 
 -- Themes
 Plug('catppuccin/nvim', { as = 'catppuccin' }) -- Catppuccin Theme
 Plug 'sainnhe/sonokai'
 
 vim.call('plug#end')
+
+-- Globals ---------------------------------------------------------------------
+
+local globals = {
+    platform = vim.loop.os_uname().sysname,
+    is_windows = vim.loop.os_uname().sysname == 'Windows_NT',
+    is_mac = vim.loop.os_uname().sysname == 'Darwin',
+}
 
 -- Leader Setup ----------------------------------------------------------------
 
@@ -28,6 +37,9 @@ end
 
 -- Misc ------------------------------------------------------------------------
 
+vim.g.fileformats = 'unix'
+vim.g.fileformat = 'unix'
+
 leader_key('r', ':source $MYVIMRC<CR>')
 leader_key('p', ':set paste!<CR>:set paste?<CR>')
 
@@ -35,6 +47,10 @@ leader_key('p', ':set paste!<CR>:set paste?<CR>')
 -- Requires 'preservim/nerdtree'
 
 leader_key('a', ':NERDTreeToggle<CR>')
+
+vim.g.NERDTreeIgnore = {
+    '\\.meta$[[file]]', -- Unity's .meta files
+}
 
 -- Mouse -----------------------------------------------------------------------
 
@@ -82,6 +98,22 @@ vim.opt.splitright = true
 leader_key('|', ':vsp %<CR>')
 leader_key('-', ':sp %<CR>')
 
+-- Terminal --------------------------------------------------------------------
+
+vim.keymap.set('t', '<Esc>', '<C-\\><C-n>') -- Esc -> Normal Mode
+
+if (globals.is_windows) then
+    -- On Windows, set the default shell to Powershell.
+    -- from :help shell-powershell
+    vim.cmd([[
+        let &shell = executable('pwsh') ? 'pwsh' : 'powershell'
+        let &shellcmdflag = '-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;'
+        let &shellredir = '-RedirectStandardOutput %s -NoNewWindow -Wait'
+        let &shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+        set shellquote= shellxquote=
+    ]])
+end
+
 -- Autocomplete ----------------------------------------------------------------
 
 local cmp = require('cmp') -- Requires 'hrsh7th/nvim-cmp'
@@ -119,7 +151,8 @@ local lspconfig = require('lspconfig')       -- Requires 'neovim/nvim-lspconfig'
 local cmp_nvim_lsp = require('cmp_nvim_lsp') -- Requires 'hrsh7th/cmp-nvim-lsp'
 
 local on_attach = function(client, buffer_number)
-    -- TODO: See /neovim/nvim-lspconfig README for suggestions
+    -- See /neovim/nvim-lspconfig README for suggestions.
+    leader_key('f', vim.lsp.buf.formatting)
 end
 
  -- Ties 'nvim-cmp' and 'nvim-lspconfig' together via 'cmp_nvim_lsp'
@@ -147,6 +180,14 @@ lspconfig['omnisharp'].setup{
 
 -- Language Specifics ----------------------------------------------------------
 
+vim.api.nvim_create_autocmd(
+    { "BufNewFile", "BufRead" },
+    {
+        pattern = { "BUCK" },
+        callback = function() vim.bo.filetype = 'bzl' end,
+    }
+)
+
 local function set_language_settings(language, tab_size, tab_type, line_length)
     vim.api.nvim_create_autocmd(
         { "FileType" },
@@ -165,6 +206,9 @@ local function set_language_settings(language, tab_size, tab_type, line_length)
     )
 end
 
-set_language_settings('lua',  4, 'space', 80)
-set_language_settings('cs',   2, 'space', 100)
-set_language_settings('rust', 4, 'space', 100)
+set_language_settings('lua',    4, 'space', 80)
+set_language_settings('cs',     2, 'space', 100)
+set_language_settings('rust',   4, 'space', 100)
+set_language_settings('kotlin', 2, 'space', 100)
+set_language_settings('bzl',    4, 'space', 100)
+set_language_settings('cpp',    2, 'space', 100)
