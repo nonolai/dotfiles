@@ -12,6 +12,7 @@ Plug 'neovim/nvim-lspconfig'                   -- Neovim default LSP configs
 Plug 'hrsh7th/nvim-cmp'                        -- Autocomplete
 Plug 'hrsh7th/cmp-nvim-lsp'                    -- Autocomplete/LSP interface
 Plug 'udalov/kotlin-vim'                       -- Kotlin Syntax Highlighting
+Plug 'habamax/vim-godot'                       -- GDScript support
 
 -- Themes
 Plug('catppuccin/nvim', { as = 'catppuccin' }) -- Catppuccin Theme
@@ -21,6 +22,14 @@ vim.call('plug#end')
 
 -- Globals ---------------------------------------------------------------------
 
+-- Paths to dependencies (i.e. LSP binaries)
+local paths = {
+    omnisharp_binary = '/Users/cameron/bin/omnisharp/OmniSharp.exe',
+    godot_binary = '/Applications/Godot.app',
+}
+
+-- Helpers that should be globally constant on a given platform. Useful for
+-- per-system conditional configuration.
 local globals = {
     platform = vim.loop.os_uname().sysname,
     is_windows = vim.loop.os_uname().sysname == 'Windows_NT',
@@ -49,7 +58,13 @@ leader_key('p', ':set paste!<CR>:set paste?<CR>')
 leader_key('a', ':NERDTreeToggle<CR>')
 
 vim.g.NERDTreeIgnore = {
-    '\\.meta$[[file]]', -- Unity's .meta files
+    -- Unity's .meta files
+    '\\.meta$[[file]]',
+    -- Godot's .import files
+    '\\.import$[[file]]',
+    -- C# project files
+    '\\.csproj$[[file]]',
+    '\\.sln$[[file]]',
 }
 
 -- Mouse -----------------------------------------------------------------------
@@ -128,7 +143,7 @@ local window_styling = cmp.config.window.bordered({
 cmp.setup({
     snippet = {
         expand = function(args)
-            vim.fn["vsnip#anonymous"](args.body)
+            vim.fn['vsnip#anonymous'](args.body)
         end,
     },
     window = {
@@ -165,32 +180,61 @@ lspconfig['rust_analyzer'].setup({
     on_attach = on_attach,
 })
 
--- Requires pre-installation of Omnisharp/omnisharp-roslyn
+-- Requires:
+-- * Pre-installation of Omnisharp/omnisharp-roslyn
+-- * Pre-installation of Mono (only on non-Windows platforms)
+-- * Mono on PATH (only on non-Windows platforms)
 local pid = vim.fn.getpid()
-local omnisharp_bin = "C:\\Users\\Cameron\\bin\\Omnisharp\\OmniSharp.exe"
-lspconfig['omnisharp'].setup{
+
+local runner = { "mono" }
+if (globals.is_windows) then
+    runner = {}
+end 
+
+local omnisharp_bin = paths.omnisharp_binary
+lspconfig['omnisharp'].setup({
     capabilities = capabilities,
     on_attach = on_attach,
-    cmd = { omnisharp_bin, "--languageserver", "--hostPID", tostring(pid) },
+    cmd = {
+        unpack(runner),
+        omnisharp_bin,
+        '--languageserver',
+        '--hostPID',
+        tostring(pid),
+    },
     root_dir = function (fname)
         -- Expects Neovim to be opened in the directory containing the project
         return vim.fn.getcwd()
     end
-}
+})
+
+-- Requires Godot installed (and running at LSP startup time)
+vim.g.godot_executable = paths.godot_binary
+lspconfig['gdscript'].setup({
+    capabilities = capabilities,
+    on_attach = on_attach,
+    flags = {
+      debounce_text_changes = 150,
+    }
+})
 
 -- Language Specifics ----------------------------------------------------------
 
-vim.api.nvim_create_autocmd(
-    { "BufNewFile", "BufRead" },
-    {
-        pattern = { "BUCK" },
-        callback = function() vim.bo.filetype = 'bzl' end,
-    }
-)
+local function set_pattern_as_filetype(pattern, filetype)
+    vim.api.nvim_create_autocmd(
+        { 'BufNewFile', 'BufRead' },
+        {
+            pattern = { pattern },
+            callback = function() vim.bo.filetype = filetype end,
+        }
+    )
+end
+
+set_pattern_as_filetype('BUCK', 'bzl')
 
 local function set_language_settings(language, tab_size, tab_type, line_length)
     vim.api.nvim_create_autocmd(
-        { "FileType" },
+        { 'FileType' },
         {
             pattern = { language },
             callback = function()
@@ -206,9 +250,11 @@ local function set_language_settings(language, tab_size, tab_type, line_length)
     )
 end
 
-set_language_settings('lua',    4, 'space', 80)
-set_language_settings('cs',     2, 'space', 100)
-set_language_settings('rust',   4, 'space', 100)
-set_language_settings('kotlin', 2, 'space', 100)
-set_language_settings('bzl',    4, 'space', 100)
-set_language_settings('cpp',    2, 'space', 100)
+set_language_settings('lua',      4, 'space', 80)
+set_language_settings('cs',       2, 'space', 100)
+set_language_settings('rust',     4, 'space', 100)
+set_language_settings('kotlin',   2, 'space', 100)
+set_language_settings('bzl',      4, 'space', 100)
+set_language_settings('cpp',      2, 'space', 100)
+set_language_settings('gdscript', 4, 'space', 80)
+
