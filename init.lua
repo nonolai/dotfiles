@@ -1,24 +1,42 @@
 -- init.lua - Neovim Configuration
 
 -- Plugins ---------------------------------------------------------------------
--- Requires pre-installation of junegunn/vim-plug
+-- Requires pre-installation of wbthomason/packer.nvim
 
-local Plug = vim.fn['plug#']
+require('packer').startup(function(use)
+  use 'wbthomason/packer.nvim'                 -- Package Manager
 
-vim.call('plug#begin', '~/.config/nvim/plugged')
+  use 'neovim/nvim-lspconfig'                  -- Neovim default LSP configs
+  use 'hrsh7th/nvim-cmp'                       -- Autocomplete
+  use 'hrsh7th/cmp-nvim-lsp'                   -- Autocomplete/LSP interface
+  use 'lewis6991/gitsigns.nvim'                -- Git Gutter
 
-Plug 'preservim/nerdtree'                      -- NERDTree File Browser
-Plug 'neovim/nvim-lspconfig'                   -- Neovim default LSP configs
-Plug 'hrsh7th/nvim-cmp'                        -- Autocomplete
-Plug 'hrsh7th/cmp-nvim-lsp'                    -- Autocomplete/LSP interface
-Plug 'udalov/kotlin-vim'                       -- Kotlin Syntax Highlighting
-Plug 'habamax/vim-godot'                       -- GDScript support
+  -- Fuzzy Finder (Telescope)
+  use {
+      'nvim-telescope/telescope.nvim',
+      tag = '0.1.0',
+      requires = { {'nvim-lua/plenary.nvim'} }
+  }
+  use {
+      'nvim-telescope/telescope-fzf-native.nvim',
+      run = 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && ' ..
+            'cmake --build build --config Release && ' ..
+            'cmake --install build --prefix build'
+  }
 
--- Themes
-Plug('catppuccin/nvim', { as = 'catppuccin' }) -- Catppuccin Theme
-Plug 'sainnhe/sonokai'
+  -- Themes
+  use { 'catppuccin/nvim', as = 'catppuccin' } -- Catppuccin Theme
+  use 'sainnhe/sonokai'
 
-vim.call('plug#end')
+  -- Language Specific
+  use 'udalov/kotlin-vim'                      -- Kotlin Syntax Highlighting
+  use 'habamax/vim-godot'                      -- GDScript support
+end)
+
+-- Requires 'nvim-telescope/telescope.nvim'
+local telescope = {
+    builtin = require('telescope.builtin'),
+}
 
 -- Globals ---------------------------------------------------------------------
 
@@ -34,6 +52,7 @@ local globals = {
     platform = vim.loop.os_uname().sysname,
     is_windows = vim.loop.os_uname().sysname == 'Windows_NT',
     is_mac = vim.loop.os_uname().sysname == 'Darwin',
+    pid = vim.fn.getpid(),
 }
 
 -- Leader Setup ----------------------------------------------------------------
@@ -53,11 +72,14 @@ leader_key('r', ':source $MYVIMRC<CR>')
 leader_key('p', ':set paste!<CR>:set paste?<CR>')
 
 -- File Browsing ---------------------------------------------------------------
--- Requires 'preservim/nerdtree'
 
-leader_key('a', ':NERDTreeToggle<CR>')
+leader_key('a', ':Lexplore<CR>')
+leader_key('A', ':Explore<CR>')
+leader_key('e', telescope.builtin.find_files)
 
-vim.g.NERDTreeIgnore = {
+to_hide = {
+    -- Annoying MacOS generated files
+    'DS_Store',
     -- Unity's .meta files
     '\\.meta$[[file]]',
     -- Godot's .import files
@@ -67,6 +89,14 @@ vim.g.NERDTreeIgnore = {
     '\\.sln$[[file]]',
 }
 
+-- file browser setup
+vim.g.netrw_list_hide = table.concat(to_hide, ",")
+vim.g.netrw_liststyle = 3
+vim.g.netrw_keepdir = 0
+vim.g.netrw_winsize = 20
+vim.g.netrw_banner = 0
+vim.g.netrw_browse_split = 4
+
 -- Mouse -----------------------------------------------------------------------
 
 vim.opt.mouse = 'a'
@@ -74,6 +104,9 @@ vim.opt.mouse = 'a'
 -- Editor Presentation ---------------------------------------------------------
 
 vim.opt.number = true
+
+-- Requires 'lewis6991/gitsigns.nvim'
+require('gitsigns').setup()
 
 local function setup_catppuccin(flavor)
     -- Available Flavors: macchiato, latte, frappe, mocha
@@ -101,7 +134,7 @@ leader_key('h', ':set hlsearch!<CR>')
 
 vim.opt.hidden = true
 
-leader_key('b', ':ls<CR>:b<space>')
+leader_key('b', telescope.builtin.buffers)
 leader_key('n', ':bnext<CR>')
 leader_key('N', ':bprev<CR>')
 
@@ -167,14 +200,13 @@ local cmp_nvim_lsp = require('cmp_nvim_lsp') -- Requires 'hrsh7th/cmp-nvim-lsp'
 
 local on_attach = function(client, buffer_number)
     -- See /neovim/nvim-lspconfig README for suggestions.
-    leader_key('f', vim.lsp.buf.formatting)
+    leader_key('f', function() vim.lsp.buf.format { async = true } end)
 end
 
  -- Ties 'nvim-cmp' and 'nvim-lspconfig' together via 'cmp_nvim_lsp'
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = cmp_nvim_lsp.update_capabilities(capabilities)
+local capabilities = cmp_nvim_lsp.default_capabilities()
 
--- Requires pre-installation of rust-analyzer
+-- Requires pre-installation of rust-analyzer and binary on path
 lspconfig['rust_analyzer'].setup({
     capabilities = capabilities,
     on_attach = on_attach,
@@ -184,8 +216,6 @@ lspconfig['rust_analyzer'].setup({
 -- * Pre-installation of Omnisharp/omnisharp-roslyn
 -- * Pre-installation of Mono (only on non-Windows platforms)
 -- * Mono on PATH (only on non-Windows platforms)
-local pid = vim.fn.getpid()
-
 local runner = { "mono" }
 if (globals.is_windows) then
     runner = {}
@@ -200,7 +230,7 @@ lspconfig['omnisharp'].setup({
         omnisharp_bin,
         '--languageserver',
         '--hostPID',
-        tostring(pid),
+        tostring(globals.pid),
     },
     root_dir = function (fname)
         -- Expects Neovim to be opened in the directory containing the project
@@ -217,6 +247,9 @@ lspconfig['gdscript'].setup({
       debounce_text_changes = 150,
     }
 })
+
+-- Requires NPM package vscode-langservers-extracted
+lspconfig['eslint'].setup{}
 
 -- Language Specifics ----------------------------------------------------------
 
@@ -257,4 +290,3 @@ set_language_settings('kotlin',   2, 'space', 100)
 set_language_settings('bzl',      4, 'space', 100)
 set_language_settings('cpp',      2, 'space', 100)
 set_language_settings('gdscript', 4, 'space', 80)
-
