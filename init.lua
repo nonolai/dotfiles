@@ -6,10 +6,11 @@
 require('packer').startup(function(use)
   use 'wbthomason/packer.nvim'                 -- Package Manager
 
+  -- LSP Packages
   use 'neovim/nvim-lspconfig'                  -- Neovim default LSP configs
   use 'hrsh7th/nvim-cmp'                       -- Autocomplete
   use 'hrsh7th/cmp-nvim-lsp'                   -- Autocomplete/LSP interface
-  use 'lewis6991/gitsigns.nvim'                -- Git Gutter
+  use 'mhinz/vim-signify'                      -- Git/Mercurial Gutter
 
   -- Fuzzy Finder (Telescope)
   use {
@@ -26,12 +27,15 @@ require('packer').startup(function(use)
 
   -- Themes
   use { 'catppuccin/nvim', as = 'catppuccin' } -- Catppuccin Theme
-  use 'sainnhe/sonokai'
+  use 'sainnhe/sonokai'                        -- Sonokai Theme
 
   -- Language Specific
   use 'udalov/kotlin-vim'                      -- Kotlin Syntax Highlighting
   use 'habamax/vim-godot'                      -- GDScript support
 end)
+
+require('telescope').setup{
+}
 
 -- Requires 'nvim-telescope/telescope.nvim'
 local telescope = {
@@ -105,9 +109,6 @@ vim.opt.mouse = 'a'
 
 vim.opt.number = true
 
--- Requires 'lewis6991/gitsigns.nvim'
-require('gitsigns').setup()
-
 local function setup_catppuccin(flavor)
     -- Available Flavors: macchiato, latte, frappe, mocha
     vim.g.catppucin_flavour = flavor or 'mocha'
@@ -122,6 +123,14 @@ local function setup_sonokai(variant)
 end
 
 setup_sonokai()
+
+vim.api.nvim_set_hl(0, 'Normal', { ctermbg = 'NONE' })
+vim.api.nvim_set_hl(0, 'EndOfBuffer', { ctermbg = 'NONE' })
+
+local gutter_sign = '┃'
+vim.g.signify_sign_add = gutter_sign
+vim.g.signify_sign_change = gutter_sign
+vim.g.signify_sign_delete = gutter_sign
 
 -- Searching -------------------------------------------------------------------
 
@@ -172,7 +181,6 @@ local window_styling = cmp.config.window.bordered({
     border = 'single'
 })
 
-
 cmp.setup({
     snippet = {
         expand = function(args)
@@ -198,9 +206,9 @@ cmp.setup({
 local lspconfig = require('lspconfig')       -- Requires 'neovim/nvim-lspconfig'
 local cmp_nvim_lsp = require('cmp_nvim_lsp') -- Requires 'hrsh7th/cmp-nvim-lsp'
 
-local on_attach = function(client, buffer_number)
+local common_on_attach = function(client, buffer_number)
     -- See /neovim/nvim-lspconfig README for suggestions.
-    leader_key('f', function() vim.lsp.buf.format { async = true } end)
+    leader_key('f', function() vim.lsp.buf.format { async = false } end)
 end
 
  -- Ties 'nvim-cmp' and 'nvim-lspconfig' together via 'cmp_nvim_lsp'
@@ -209,7 +217,7 @@ local capabilities = cmp_nvim_lsp.default_capabilities()
 -- Requires pre-installation of rust-analyzer and binary on path
 lspconfig['rust_analyzer'].setup({
     capabilities = capabilities,
-    on_attach = on_attach,
+    on_attach = common_on_attach,
 })
 
 -- Requires:
@@ -219,12 +227,12 @@ lspconfig['rust_analyzer'].setup({
 local runner = { "mono" }
 if (globals.is_windows) then
     runner = {}
-end 
+end
 
 local omnisharp_bin = paths.omnisharp_binary
 lspconfig['omnisharp'].setup({
     capabilities = capabilities,
-    on_attach = on_attach,
+    on_attach = common_on_attach,
     cmd = {
         unpack(runner),
         omnisharp_bin,
@@ -242,14 +250,24 @@ lspconfig['omnisharp'].setup({
 vim.g.godot_executable = paths.godot_binary
 lspconfig['gdscript'].setup({
     capabilities = capabilities,
-    on_attach = on_attach,
+    on_attach = common_on_attach,
     flags = {
       debounce_text_changes = 150,
     }
 })
 
 -- Requires NPM package vscode-langservers-extracted
-lspconfig['eslint'].setup{}
+lspconfig['eslint'].setup({
+    capabilities = capabilities,
+    on_attach = function(client, buffer_number)
+        common_on_attach(client, buffer_number)
+        -- client.resolved_capabilities.document_formatting = true
+        -- client.resolved_capabilities.document_range_formatting = true
+        -- client.server_capabilities.documentFormattingProvider = true
+        -- client.server_capabilities.documentRangeFormattingProvider = true
+    end,
+    -- settings = { format = true, },
+})
 
 -- Language Specifics ----------------------------------------------------------
 
@@ -283,10 +301,19 @@ local function set_language_settings(language, tab_size, tab_type, line_length)
     )
 end
 
-set_language_settings('lua',      4, 'space', 80)
-set_language_settings('cs',       2, 'space', 100)
-set_language_settings('rust',     4, 'space', 100)
-set_language_settings('kotlin',   2, 'space', 100)
-set_language_settings('bzl',      4, 'space', 100)
-set_language_settings('cpp',      2, 'space', 100)
-set_language_settings('gdscript', 4, 'space', 80)
+set_language_settings('lua',        4, 'space', 80)
+set_language_settings('cs',         2, 'space', 100)
+set_language_settings('rust',       4, 'space', 100)
+set_language_settings('kotlin',     2, 'space', 100)
+set_language_settings('bzl',        4, 'space', 100)
+set_language_settings('cpp',        2, 'space', 100)
+set_language_settings('gdscript',   4, 'space', 80)
+set_language_settings('javascript', 4, 'space', 100)
+set_language_settings('typescript', 4, 'space', 100)
+
+-- Autocommands ----------------------------------------------------------------
+
+vim.api.nvim_create_autocmd({ "BufWritePre" }, {
+    pattern = { "*" },
+    command = [[%s/\s\+$//e]],
+})
