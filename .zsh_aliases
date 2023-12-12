@@ -1,3 +1,0 @@
-alias dotfiles='vim ~/.tmux.conf ~/.zshrc ~/.zsh_aliases ~/.vimrc'
-alias tmux='tmux -2'
-alias work='tmux a -t work || tmux new-session -s work'
