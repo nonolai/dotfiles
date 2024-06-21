@@ -1,38 +1,46 @@
 -- init.lua - Neovim Configuration
 
 -- Plugins ---------------------------------------------------------------------
--- Requires pre-installation of wbthomason/packer.nvim
+-- Requires pre-installation of git
 
-require('packer').startup(function(use)
-  use 'wbthomason/packer.nvim'                 -- Package Manager
+-- Bootstrap lazy package manager
+local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+    vim.fn.system({
+        'git',
+        'clone',
+        '--filter=blob:none',
+        'https://github.com/folke/lazy.nvim.git',
+        '--branch=stable', -- latest stable release
+        lazypath,
+    })
+end
+vim.opt.rtp:prepend(lazypath)
 
-  -- LSP Packages
-  use 'neovim/nvim-lspconfig'                  -- Neovim default LSP configs
-  use 'hrsh7th/nvim-cmp'                       -- Autocomplete
-  use 'hrsh7th/cmp-nvim-lsp'                   -- Autocomplete/LSP interface
-  use 'mhinz/vim-signify'                      -- Git/Mercurial Gutter
+require('lazy').setup({
+    -- LSP Packages
+    'neovim/nvim-lspconfig',  -- Neovim default LSP configs
+    'hrsh7th/nvim-cmp',       -- Autocomplete
+    'hrsh7th/cmp-nvim-lsp',   -- Autocomplete/LSP interface
+    'mhinz/vim-signify',      -- Git/Mercurial Gutter
 
-  -- Fuzzy Finder (Telescope)
-  use {
-      'nvim-telescope/telescope.nvim',
-      tag = '0.1.0',
-      requires = { {'nvim-lua/plenary.nvim'} }
-  }
-  use {
-      'nvim-telescope/telescope-fzf-native.nvim',
-      run = 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && ' ..
-            'cmake --build build --config Release && ' ..
-            'cmake --install build --prefix build'
-  }
+    -- Fuzzy Finder (Telescope)
+    {
+        'nvim-telescope/telescope.nvim',
+        tag = '0.1.8',
+        dependencies = { 'nvim-lua/plenary.nvim' },
+    },
+    { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
 
-  -- Themes
-  use { 'catppuccin/nvim', as = 'catppuccin' } -- Catppuccin Theme
-  use 'sainnhe/sonokai'                        -- Sonokai Theme
+    -- Themes
+    { 'catppuccin/nvim', name = 'catppuccin' },
+    'sainnhe/sonokai',
+    { 'ntk148v/habamax.nvim', dependencies = { 'rktjmp/lush.nvim' } },
 
-  -- Language Specific
-  use 'udalov/kotlin-vim'                      -- Kotlin Syntax Highlighting
-  use 'habamax/vim-godot'                      -- GDScript support
-end)
+    -- Language Specific
+    'udalov/kotlin-vim',  -- Kotlin Syntax Highlighting
+    'habamax/vim-godot',  -- GDScript support
+})
 
 require('telescope').setup{
 }
@@ -46,7 +54,7 @@ local telescope = {
 
 -- Paths to dependencies (i.e. LSP binaries)
 local paths = {
-    omnisharp_binary = '/Users/cameron/bin/omnisharp/OmniSharp.exe',
+    omnisharp_binary = '/Users/cclausen/bin/omnisharp/OmniSharp.exe',
     godot_binary = '/Applications/Godot.app',
 }
 
@@ -94,7 +102,7 @@ to_hide = {
 }
 
 -- file browser setup
-vim.g.netrw_list_hide = table.concat(to_hide, ",")
+vim.g.netrw_list_hide = table.concat(to_hide, ',')
 vim.g.netrw_liststyle = 3
 vim.g.netrw_keepdir = 0
 vim.g.netrw_winsize = 20
@@ -122,11 +130,13 @@ local function setup_sonokai(variant)
     vim.cmd [[colorscheme sonokai]]
 end
 
-setup_sonokai()
+vim.cmd [[colorscheme habamax.nvim]]
 
+-- Make background transparent (including end of file)
 vim.api.nvim_set_hl(0, 'Normal', { ctermbg = 'NONE' })
 vim.api.nvim_set_hl(0, 'EndOfBuffer', { ctermbg = 'NONE' })
 
+-- VimSignify settings.
 local gutter_sign = '┃'
 vim.g.signify_sign_add = gutter_sign
 vim.g.signify_sign_change = gutter_sign
@@ -224,7 +234,7 @@ lspconfig['rust_analyzer'].setup({
 -- * Pre-installation of Omnisharp/omnisharp-roslyn
 -- * Pre-installation of Mono (only on non-Windows platforms)
 -- * Mono on PATH (only on non-Windows platforms)
-local runner = { "mono" }
+local runner = { 'mono' }
 if (globals.is_windows) then
     runner = {}
 end
@@ -310,10 +320,11 @@ set_language_settings('cpp',        2, 'space', 100)
 set_language_settings('gdscript',   4, 'space', 80)
 set_language_settings('javascript', 4, 'space', 100)
 set_language_settings('typescript', 4, 'space', 100)
+set_language_settings('json',       2, 'space', 100)
 
 -- Autocommands ----------------------------------------------------------------
 
-vim.api.nvim_create_autocmd({ "BufWritePre" }, {
-    pattern = { "*" },
+vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
+    pattern = { '*' },
     command = [[%s/\s\+$//e]],
 })
