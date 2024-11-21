@@ -1,0 +1,108 @@
+{
+    "editor.fontFamily": "Fira Code",
+    "editor.fontSize": 12,
+    "editor.fontLigatures": true,
+    "editor.renderWhitespace": "boundary",
+    "zenMode.hideLineNumbers": false,
+    "editor.rulers": [
+        80
+    ],
+    "files.trimTrailingWhitespace": true,
+    "terminal.integrated.defaultLocation": "editor",
+    "editor.codeActionsOnSave": {
+
+        //"source.organizeImports": "explicit"
+    },
+    "editor.inlayHints.enabled": "offUnlessPressed",
+    "editor.autoClosingBrackets":"never",
+    ////////////////////////////////////////////////////////////////////////////
+    // Language Specifics
+    ////////////////////////////////////////////////////////////////////////////
+    "[csharp]": {
+        "editor.rulers": [
+            100
+        ]
+    },
+    "[rust]": {
+        "editor.rulers": [
+            100
+        ],
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    //////////////////////////////////////////////////////////////////////////
+    // Vim Settings
+    ////////////////////////////////////////////////////////////////////////////
+    "vim.leader": ",",
+    "vim.normalModeKeyBindings": [
+        {
+            "before": [
+                "<leader>",
+                "f"
+            ],
+            "commands": [
+                "editor.action.formatDocument",
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "t"
+            ],
+            "commands": [
+                "workbench.action.createTerminalEditor"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "|"
+            ],
+            "commands": [
+                "workbench.action.splitEditor"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "-"
+            ],
+            "commands": [
+                "workbench.action.splitEditorDown"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "e"
+            ],
+            "commands": [
+                "workbench.action.quickOpen"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "z"
+            ],
+            "commands": [
+                "workbench.action.toggleZenMode"
+            ]
+        },
+    ],
+    "files.exclude": {
+        "**/.godot": true,
+        "**/.sl": true,
+        "**/*.import": true
+    },
+    "rust-analyzer.lens.implementations.enable": false,
+    "rust-analyzer.lens.debug.enable": false,
+    "[gdscript]": {
+        "editor.defaultFormatter": "geequlim.godot-tools"
+    },
+    "gdscript_formatter.use_spaces.enabled": true,
+    "workbench.activityBar.location": "hidden",
+    "godotTools.editorPath.godot4": "/Applications/Godot.app/Contents/MacOS/Godot",
+    "godotTools.inlayHints.gdscript": true,
+}
